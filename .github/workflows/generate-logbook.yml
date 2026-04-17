@@ -1,0 +1,52 @@
+name: Generate Logbook Entry
+
+on:
+  schedule:
+    - cron: '46 6 * * 1'
+    - cron: '34 11 * * 3'
+    - cron: '37 13 * * 5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-logbook:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Generate markdown log entry
+        env:
+          OLLAMA_HOST: ${{ secrets.OLLAMA_HOST }}
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+        run: uv run main.py --output markdown
+
+      - name: Commit generated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet -- logs registry.json; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git add logs registry.json
+          git commit -m "chore: generate logbook entry"
+          git push origin HEAD:main

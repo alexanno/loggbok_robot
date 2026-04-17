@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>En drømmende reise langs Sørlandskysten</title>
+  <style>
+    :root {
+      --bg: #f4efe5;
+      --paper: #fbf8f1;
+      --ink: #1f2a2e;
+      --muted: #6e7068;
+      --accent: #164b63;
+      --accent-soft: #dbe7ec;
+      --border: #d3cab8;
+      --shadow: 0 18px 40px rgba(41, 34, 24, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(22, 75, 99, 0.12), transparent 28%),
+        linear-gradient(180deg, #efe7d8 0%, var(--bg) 32%, #ebe3d1 100%);
+    }
+
+    .shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    .hero {
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.2rem, 4vw, 4rem);
+      line-height: 0.98;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      max-width: 720px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel,
+    .log-card {
+      background: color-mix(in srgb, var(--paper) 92%, white 8%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 18px;
+      position: sticky;
+      top: 20px;
+    }
+
+    .panel h2,
+    .log-card h2 {
+      margin: 0 0 14px;
+      font-size: 1.1rem;
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fffef9;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      outline: 2px solid rgba(22, 75, 99, 0.2);
+      border-color: var(--accent);
+    }
+
+    .hint {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+
+    .entry-list {
+      max-height: 50vh;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .entry-item {
+      width: 100%;
+      text-align: left;
+      border: 1px solid transparent;
+      background: transparent;
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font: inherit;
+      color: var(--ink);
+      margin-bottom: 8px;
+      transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+    }
+
+    .entry-item:hover,
+    .entry-item:focus-visible {
+      background: var(--accent-soft);
+      border-color: rgba(22, 75, 99, 0.18);
+      outline: none;
+      transform: translateY(-1px);
+    }
+
+    .entry-item.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #f7fbfc;
+    }
+
+    .entry-title {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .entry-meta {
+      display: block;
+      font-size: 0.85rem;
+      opacity: 0.78;
+    }
+
+    .log-card {
+      padding: 26px;
+    }
+
+    .status {
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #f3efe4;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .log-header {
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      align-items: start;
+      flex-wrap: wrap;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .log-kicker {
+      margin: 0 0 8px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 12px;
+    }
+
+    .log-title {
+      margin: 0;
+      font-size: clamp(1.5rem, 2.6vw, 2.4rem);
+      line-height: 1.1;
+    }
+
+    .timestamp {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .meta-card {
+      padding: 14px;
+      border-radius: 14px;
+      background: #f8f4eb;
+      border: 1px solid var(--border);
+    }
+
+    .meta-label {
+      margin: 0 0 6px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+
+    .meta-value {
+      margin: 0;
+      line-height: 1.45;
+    }
+
+    .log-body {
+      white-space: pre-wrap;
+      font-size: 1.04rem;
+      line-height: 1.8;
+    }
+
+    .log-body em {
+      color: #5d4d39;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    @media (max-width: 860px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <p class="eyebrow">Loggbok Robot</p>
+      <h1>Skipsdagbøker fra kysten</h1>
+      <p class="subtitle">Et eksperiment mellom kunst, historie og kunstig intelligens</p>
+    </header>
+
+    <main class="layout">
+      <aside class="panel">
+        <h2>Navigasjon</h2>
+        <p class="hint">Bruk nedtrekkslisten eller listen under for å hoppe til en annen logg. Nyeste gyldige logg lastes automatisk.</p>
+        <div class="field">
+          <label for="entrySelect">Velg logg</label>
+          <select id="entrySelect"></select>
+        </div>
+
+        <div id="entryList" class="entry-list" aria-label="Tilgjengelige logger"></div>
+      </aside>
+
+      <section class="log-card">
+        <p id="status" class="status">Laster register...</p>
+
+        <div id="viewer" hidden>
+          <div class="log-header">
+            <div>
+              <p class="log-kicker">Nyeste logg</p>
+              <h2 id="logTitle" class="log-title">-</h2>
+            </div>
+            <div id="logTimestamp" class="timestamp"></div>
+          </div>
+
+          <div class="meta-grid">
+            <article class="meta-card">
+              <p class="meta-label">Dato</p>
+              <p id="metaDate" class="meta-value">-</p>
+            </article>
+            <article class="meta-card">
+              <p class="meta-label">Plassering</p>
+              <p id="metaLocation" class="meta-value">-</p>
+            </article>
+            <article class="meta-card">
+              <p class="meta-label">Koordinater</p>
+              <p id="metaCoordinates" class="meta-value">-</p>
+            </article>
+            <article class="meta-card">
+              <p class="meta-label">Vær</p>
+              <p id="metaWeather" class="meta-value">-</p>
+            </article>
+          </div>
+
+          <div id="logBody" class="log-body"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const state = {
+      entries: [],
+      activeFilename: null,
+    };
+
+    const statusEl = document.getElementById("status");
+    const viewerEl = document.getElementById("viewer");
+    const entrySelect = document.getElementById("entrySelect");
+    const entryList = document.getElementById("entryList");
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    function formatTimestamp(timestamp) {
+      if (!timestamp) {
+        return "Ukjent tidspunkt";
+      }
+
+      const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) {
+        return timestamp;
+      }
+
+      return new Intl.DateTimeFormat("nb-NO", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(date);
+    }
+
+    function prettyName(filename) {
+      return filename.split("/").pop() || filename;
+    }
+
+    function renderInlineMarkdown(text) {
+      const escaped = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+      return escaped
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/(^|[^*])\*(?!\s)(.+?)(?<!\s)\*/g, "$1<em>$2</em>");
+    }
+
+    function parseLog(markdown) {
+      const lines = markdown.split(/\r?\n/);
+      const sections = {
+        title: "Skipsdagbokoppføring",
+        date: "",
+        location: "",
+        coordinates: "",
+        weather: "",
+        body: "",
+      };
+
+      let currentSection = null;
+      const bodyLines = [];
+      const weatherLines = [];
+
+      for (const line of lines) {
+        if (line.startsWith("# ")) {
+          sections.title = line.replace(/^#\s+/, "").trim();
+          continue;
+        }
+
+        if (line.startsWith("**Dato**:")) {
+          sections.date = line.split(":").slice(1).join(":").trim();
+          continue;
+        }
+
+        if (line === "## Plassering") {
+          currentSection = "location";
+          continue;
+        }
+
+        if (line === "## Værdata") {
+          currentSection = "weather";
+          continue;
+        }
+
+        if (line === "## Dagbokoppføring") {
+          currentSection = "body";
+          continue;
+        }
+
+        if (currentSection === "location") {
+          if (line.startsWith("- **Navn**:")) {
+            sections.location = line.split(":").slice(1).join(":").trim();
+          } else if (line.startsWith("- **Koordinater**:")) {
+            sections.coordinates = line.split(":").slice(1).join(":").trim();
+          }
+          continue;
+        }
+
+        if (currentSection === "weather") {
+          if (line.trim()) {
+            weatherLines.push(line.trim());
+          }
+          continue;
+        }
+
+        if (currentSection === "body") {
+          bodyLines.push(line);
+        }
+      }
+
+      sections.weather = weatherLines.join(" ");
+      sections.body = bodyLines.join("\n").trim();
+      return sections;
+    }
+
+    async function fetchJson(url) {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`Kunne ikke lese ${url}`);
+      }
+      return response.json();
+    }
+
+    async function fetchText(url) {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`Kunne ikke lese ${url}`);
+      }
+      return response.text();
+    }
+
+    function normalizeEntries(registry) {
+      const entries = Array.isArray(registry.entries) ? registry.entries : [];
+      return entries
+        .filter((entry) => entry && typeof entry.filename === "string")
+        .filter((entry) => /skipsdagbok_\d{8}_\d{6}\.md$/.test(entry.filename))
+        .sort((a, b) => String(b.timestamp || "").localeCompare(String(a.timestamp || "")));
+    }
+
+    function renderEntryControls() {
+      entrySelect.innerHTML = "";
+      entryList.innerHTML = "";
+
+      if (!state.entries.length) {
+        const option = document.createElement("option");
+        option.textContent = "Ingen logger";
+        entrySelect.appendChild(option);
+
+        const empty = document.createElement("p");
+        empty.className = "empty";
+        empty.textContent = "Ingen logger i registeret.";
+        entryList.appendChild(empty);
+        return;
+      }
+
+      for (const entry of state.entries) {
+        const option = document.createElement("option");
+        option.value = entry.filename;
+        option.textContent = `${prettyName(entry.filename)} · ${formatTimestamp(entry.timestamp)}`;
+        option.selected = entry.filename === state.activeFilename;
+        entrySelect.appendChild(option);
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `entry-item${entry.filename === state.activeFilename ? " active" : ""}`;
+        button.dataset.filename = entry.filename;
+        button.innerHTML = `
+          <span class="entry-title">${prettyName(entry.filename)}</span>
+          <span class="entry-meta">${formatTimestamp(entry.timestamp)}</span>
+        `;
+        button.addEventListener("click", () => loadLog(entry.filename));
+        entryList.appendChild(button);
+      }
+    }
+
+    function renderLog(entry, parsed) {
+      document.getElementById("logTitle").textContent = parsed.title;
+      document.getElementById("logTimestamp").textContent = formatTimestamp(entry.timestamp);
+      document.getElementById("metaDate").textContent = parsed.date || "-";
+      document.getElementById("metaLocation").textContent = parsed.location || "-";
+      document.getElementById("metaCoordinates").textContent = parsed.coordinates || "-";
+      document.getElementById("metaWeather").textContent = parsed.weather || "-";
+      document.getElementById("logBody").innerHTML = renderInlineMarkdown(parsed.body || "");
+
+      viewerEl.hidden = false;
+      setStatus(`Viser ${prettyName(entry.filename)}`);
+    }
+
+    async function loadLog(filename) {
+      const entry = state.entries.find((item) => item.filename === filename);
+      if (!entry) {
+        return;
+      }
+
+      try {
+        setStatus(`Laster ${prettyName(filename)}...`);
+        const markdown = await fetchText(entry.filename);
+        state.activeFilename = filename;
+        renderEntryControls();
+        renderLog(entry, parseLog(markdown));
+      } catch (error) {
+        setStatus(`Kunne ikke laste ${prettyName(filename)}.`);
+        console.error(error);
+      }
+    }
+
+    async function loadLatestAvailable() {
+      for (const entry of state.entries) {
+        try {
+          const markdown = await fetchText(entry.filename);
+          state.activeFilename = entry.filename;
+          renderEntryControls();
+          renderLog(entry, parseLog(markdown));
+          return;
+        } catch (error) {
+          console.warn(`Hopper over ${entry.filename}`, error);
+        }
+      }
+
+      setStatus("Fant ingen lesbare loggfiler i registeret.");
+    }
+
+    entrySelect.addEventListener("change", (event) => {
+      loadLog(event.target.value);
+    });
+
+    async function init() {
+      try {
+        const registry = await fetchJson("registry.json");
+        state.entries = normalizeEntries(registry);
+
+        if (!state.entries.length) {
+          setStatus("Registry er tomt eller inneholder ingen loggfiler.");
+          renderEntryControls();
+          return;
+        }
+
+        await loadLatestAvailable();
+      } catch (error) {
+        setStatus("Kunne ikke lese registry.json. Åpne siden via en enkel lokal webserver, for eksempel: python -m http.server");
+        console.error(error);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
