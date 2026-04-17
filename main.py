@@ -22,9 +22,35 @@ import sys
 import argparse
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 import requests
 import ollama
+
+
+WEATHER_SYMBOL_LABELS = {
+    "clearsky": "klar himmel",
+    "fair": "lettskyet",
+    "partlycloudy": "delvis skyet",
+    "cloudy": "skyet",
+    "fog": "tåke",
+    "lightrain": "lett regn",
+    "rain": "regn",
+    "heavyrain": "kraftig regn",
+    "lightsleet": "lett sludd",
+    "sleet": "sludd",
+    "heavysleet": "kraftig sludd",
+    "lightsnow": "lett snø",
+    "snow": "snø",
+    "heavysnow": "kraftig snø",
+    "rainshowers": "regnbyger",
+    "heavyrainshowers": "kraftige regnbyger",
+    "lightrainshowers": "lette regnbyger",
+    "lightsleetshowers": "lette sluddbyger",
+    "sleetshowers": "sluddbyger",
+    "heavysleetshowers": "kraftige sluddbyger",
+    "lightsnowshowers": "lette snøbyger",
+    "snowshowers": "snøbyger",
+    "heavysnowshowers": "kraftige snøbyger",
+}
 
 
 def load_geojson(filepath: str = "fyrlykter_sorlandet.geojson") -> dict:
@@ -47,7 +73,10 @@ def select_random_location(geojson_data: dict) -> tuple[dict, dict]:
 
 def fetch_weather_data(latitude: float, longitude: float) -> dict:
     """Fetch weather data from Met.no API for the given coordinates."""
-    url = f"https://api.met.no/weatherapi/nowcast/2.0/complete?lat={latitude}&lon={longitude}"
+    url = (
+        "https://api.met.no/weatherapi/locationforecast/2.0/complete"
+        f"?lat={latitude}&lon={longitude}"
+    )
     headers = {"User-Agent": "loggbok-robot (https://github.com/alexandesn/loggbok_robot)"}
     
     try:
@@ -69,33 +98,105 @@ def format_weather_description(weather_data: dict) -> str:
     """Format weather data into a human-readable description."""
     if not weather_data:
         return "No weather data available"
-    
+
     data = weather_data.get("data", {})
     instant = data.get("instant", {}).get("details", {})
-    next_1h = data.get("next_1h", {}).get("details", {})
-    
-    details = []
-    
+
+    next_1h = data.get("next_1_hours", data.get("next_1h", {}))
+    next_6h = data.get("next_6_hours", data.get("next_6h", {}))
+    next_12h = data.get("next_12_hours", data.get("next_12h", {}))
+
+    lines = []
+
+    observation_time = weather_data.get("time")
+    if observation_time:
+        lines.append(f"- Observasjonstid: {observation_time}")
+
+    current_parts = []
     if "air_temperature" in instant:
-        temp = instant["air_temperature"]
-        details.append(f"Temperature: {temp}°C")
-    
-    if "wind_speed" in instant:
-        wind = instant["wind_speed"]
-        details.append(f"Wind speed: {wind} m/s")
-    
+        current_parts.append(f"temperatur {instant['air_temperature']} °C")
+    if "air_pressure_at_sea_level" in instant:
+        current_parts.append(f"lufttrykk {instant['air_pressure_at_sea_level']} hPa")
     if "relative_humidity" in instant:
-        humidity = instant["relative_humidity"]
-        details.append(f"Humidity: {humidity}%")
-    
-    if "precipitation_amount" in next_1h:
-        precip = next_1h["precipitation_amount"]
-        details.append(f"Precipitation: {precip} mm")
-    
-    if "summary" in next_1h:
-        details.append(f"Summary: {next_1h['summary']}")
-    
-    return " | ".join(details) if details else "No specific weather details"
+        current_parts.append(f"luftfuktighet {instant['relative_humidity']} %")
+    if "dew_point_temperature" in instant:
+        current_parts.append(f"duggpunkt {instant['dew_point_temperature']} °C")
+    if current_parts:
+        lines.append("- Nå: " + ", ".join(current_parts))
+
+    wind_parts = []
+    if "wind_speed" in instant:
+        wind_parts.append(f"vind {instant['wind_speed']} m/s")
+    if "wind_speed_of_gust" in instant:
+        wind_parts.append(f"kast {instant['wind_speed_of_gust']} m/s")
+    if "wind_from_direction" in instant:
+        wind_parts.append(
+            f"fra {format_wind_direction(instant['wind_from_direction'])} ({instant['wind_from_direction']}°)"
+        )
+    if wind_parts:
+        lines.append("- Vind: " + ", ".join(wind_parts))
+
+    sky_parts = []
+    if "cloud_area_fraction" in instant:
+        sky_parts.append(f"skydekke {instant['cloud_area_fraction']} %")
+    if "fog_area_fraction" in instant:
+        sky_parts.append(f"tåkeandel {instant['fog_area_fraction']} %")
+    if sky_parts:
+        lines.append("- Sikt og skydekke: " + ", ".join(sky_parts))
+
+    next_1h_line = format_forecast_period("Neste time", next_1h)
+    next_6h_line = format_forecast_period("Neste 6 timer", next_6h)
+    next_12h_line = format_forecast_period("Neste 12 timer", next_12h)
+
+    for line in (next_1h_line, next_6h_line, next_12h_line):
+        if line:
+            lines.append(line)
+
+    return "\n".join(lines) if lines else "No specific weather details"
+
+
+def format_wind_direction(degrees: float) -> str:
+    """Convert wind direction in degrees to a Norwegian compass label."""
+    directions = ["N", "NNO", "NO", "ONO", "O", "OSO", "SO", "SSO", "S", "SSV", "SV", "VSV", "V", "VNV", "NV", "NNV"]
+    index = int((degrees + 11.25) // 22.5) % len(directions)
+    return directions[index]
+
+
+def format_symbol_code(symbol_code: str) -> str:
+    """Convert Met.no symbol code to a readable Norwegian label."""
+    if not symbol_code:
+        return "ukjent værtype"
+
+    base_code = symbol_code.split("_")[0]
+    return WEATHER_SYMBOL_LABELS.get(base_code, base_code.replace("_", " "))
+
+
+def format_forecast_period(label: str, forecast_block: dict) -> str:
+    """Format one forecast period from locationforecast data."""
+    if not forecast_block:
+        return ""
+
+    details = forecast_block.get("details", {})
+    summary = forecast_block.get("summary", {})
+    parts = []
+
+    symbol_code = summary.get("symbol_code")
+    if symbol_code:
+        parts.append(f"vær {format_symbol_code(symbol_code)}")
+
+    if "precipitation_amount" in details:
+        parts.append(f"nedbør {details['precipitation_amount']} mm")
+    if "probability_of_precipitation" in details:
+        parts.append(f"nedbørssjanse {details['probability_of_precipitation']} %")
+    if "air_temperature_min" in details and "air_temperature_max" in details:
+        parts.append(
+            f"temperatur {details['air_temperature_min']} til {details['air_temperature_max']} °C"
+        )
+
+    if not parts:
+        return ""
+
+    return f"- {label}: " + ", ".join(parts)
 
 
 def get_system_prompt() -> str:
@@ -173,6 +274,8 @@ VÆRDATA:
 {weather_desc}
 
 Skriv en kreativ og troverdig dagbokoppføring (3-15 linjer). 
+
+Bruk værdataene konkret. La vindretning, styrke, skydekke, nedbør og korttidsutsikter påvirke tonen, sjøforholdene og kapteinens vurderinger når det er relevant.
 
 SKRIV KUN DAGBOKOPPFERINGEN, IKKE METADATA.
 """

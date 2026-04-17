@@ -241,6 +241,27 @@
       line-height: 1.45;
     }
 
+    .weather-panel {
+      margin-bottom: 22px;
+      padding: 18px;
+      border-radius: 16px;
+      background: #f8f4eb;
+      border: 1px solid var(--border);
+    }
+
+    .weather-list {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 10px 22px;
+    }
+
+    .weather-list li {
+      line-height: 1.5;
+      break-inside: avoid;
+    }
+
     .log-body {
       white-space: pre-wrap;
       font-size: 1.04rem;
@@ -312,11 +333,12 @@
               <p class="meta-label">Koordinater</p>
               <p id="metaCoordinates" class="meta-value">-</p>
             </article>
-            <article class="meta-card">
-              <p class="meta-label">Vær</p>
-              <p id="metaWeather" class="meta-value">-</p>
-            </article>
           </div>
+
+          <section class="weather-panel" aria-labelledby="weatherTitle">
+            <p id="weatherTitle" class="meta-label">Vær</p>
+            <div id="metaWeather" class="meta-value">-</div>
+          </section>
 
           <div id="logBody" class="log-body"></div>
         </div>
@@ -355,6 +377,22 @@
       }).format(date);
     }
 
+    function formatDateOnly(timestamp) {
+      if (!timestamp) {
+        return "-";
+      }
+
+      const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) {
+        return timestamp;
+      }
+
+      return new Intl.DateTimeFormat("nb-NO", {
+        dateStyle: "long",
+        timeStyle: "short",
+      }).format(date);
+    }
+
     function prettyName(filename) {
       return filename.split("/").pop() || filename;
     }
@@ -377,7 +415,7 @@
         date: "",
         location: "",
         coordinates: "",
-        weather: "",
+        weather: [],
         body: "",
       };
 
@@ -432,9 +470,23 @@
         }
       }
 
-      sections.weather = weatherLines.join(" ");
+      sections.weather = weatherLines;
       sections.body = bodyLines.join("\n").trim();
       return sections;
+    }
+
+    function renderWeather(lines) {
+      if (!Array.isArray(lines) || !lines.length) {
+        return "-";
+      }
+
+      const items = lines
+        .map((line) => line.replace(/^-\s*/, "").trim())
+        .filter(Boolean)
+        .map((line) => `<li>${renderInlineMarkdown(line)}</li>`)
+        .join("");
+
+      return `<ul class="weather-list">${items}</ul>`;
     }
 
     async function fetchJson(url) {
@@ -500,10 +552,10 @@
     function renderLog(entry, parsed) {
       document.getElementById("logTitle").textContent = parsed.title;
       document.getElementById("logTimestamp").textContent = formatTimestamp(entry.timestamp);
-      document.getElementById("metaDate").textContent = parsed.date || "-";
+      document.getElementById("metaDate").textContent = formatDateOnly(parsed.date);
       document.getElementById("metaLocation").textContent = parsed.location || "-";
       document.getElementById("metaCoordinates").textContent = parsed.coordinates || "-";
-      document.getElementById("metaWeather").textContent = parsed.weather || "-";
+      document.getElementById("metaWeather").innerHTML = renderWeather(parsed.weather);
       document.getElementById("logBody").innerHTML = renderInlineMarkdown(parsed.body || "");
 
       viewerEl.hidden = false;
