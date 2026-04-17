@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#   "requests>=2.31.0",
+#   "ollama>=0.1.0",
+# ]
+# ///
 """
 Generate creative ship log entries in Norwegian using weather and location data.
 
